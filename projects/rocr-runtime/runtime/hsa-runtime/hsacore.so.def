@@ -237,6 +237,8 @@ global:
 	hsa_amd_spm_set_dest_buffer;
 	hsa_amd_portable_export_dmabuf;
 	hsa_amd_portable_close_dmabuf;
+	hsa_amd_portable_import_dmabuf;
+	hsa_amd_portable_release_dmabuf_import;
 	hsa_amd_vmem_address_reserve;
 	hsa_amd_vmem_address_reserve_align;
 	hsa_amd_vmem_address_free;

@@ -3678,6 +3678,78 @@ hsa_status_t Runtime::DmaBufClose(int dmabuf) {
 #endif
 }
 
+hsa_status_t Runtime::DmaBufImport(int dmabuf, void** ptr, size_t* size) {
+#ifdef __linux__
+  if (!ipc_dmabuf_supported_) return static_cast<hsa_status_t>(HSA_STATUS_ERROR_NOT_SUPPORTED);
+  if (dmabuf < 0 || !ptr || !size) return HSA_STATUS_ERROR_INVALID_ARGUMENT;
+
+  // Collect all GPU node IDs to register the buffer with KFD.
+  std::vector<HSAuint32> nodes;
+  for (auto* agent : gpu_agents())
+    nodes.push_back(static_cast<HSAuint32>(agent->node_id()));
+  if (nodes.empty()) return HSA_STATUS_ERROR_INVALID_AGENT;
+
+  HsaGraphicsResourceInfo info = {};
+  HSA_REGISTER_MEM_FLAGS regFlags{0};
+  regFlags.ui32.requiresVAddr = 1;
+
+  int err = HSAKMT_CALL(hsaKmtRegisterGraphicsHandleToNodesExt(
+      static_cast<HSAuint64>(dmabuf), &info,
+      static_cast<unsigned int>(nodes.size()), nodes.data(), regFlags));
+  if (err != HSAKMT_STATUS_SUCCESS) return HSA_STATUS_ERROR_INVALID_ALLOCATION;
+
+  auto nodeIt = agents_by_node_.find(info.NodeId);
+  if (nodeIt == agents_by_node_.end() || nodeIt->second.empty())
+    return HSA_STATUS_ERROR_INVALID_ALLOCATION;
+  AMD::GpuAgent* agent = reinterpret_cast<AMD::GpuAgent*>(nodeIt->second[0]);
+
+  HsaExternalHandleDesc desc = {};
+  desc.device_handle = agent->libThunkDev();
+  desc.fd = static_cast<HSAint64>(dmabuf);
+  desc.type = HSA_EXTERNAL_HANDLE_DMA_BUF;
+  desc.metadata = 0;
+  desc.mem = info.MemoryAddress;
+  HsaHandleImportFlags hflags = {};
+  hflags.ui32.IPCHandle = 0;
+  hflags.ui32.SysMem = 0;
+  HsaHandleImportResult res = {};
+  HSAKMT_STATUS status = HSAKMT_CALL(hsaKmtHandleImport(&desc, &res, &hflags));
+  if (status != HSAKMT_STATUS_SUCCESS) return HSA_STATUS_ERROR_INVALID_ALLOCATION;
+
+  {
+    std::lock_guard<std::shared_mutex> lock(memory_lock_);
+    auto [it, inserted] = allocation_map_.try_emplace(
+        info.MemoryAddress, nullptr,
+        static_cast<size_t>(info.SizeInBytes),
+        static_cast<size_t>(info.SizeInBytes),
+        core::MemoryRegion::AllocateNoFlags);
+    if (!inserted && it->second.thunk_bo) {
+      HSAKMT_CALL(hsaKmtMemHandleFree(it->second.thunk_bo));
+    }
+    it->second.thunk_bo = res.buf_handle;
+    it->second.dmabuf_import = true;
+  }
+
+  *ptr = info.MemoryAddress;
+  *size = static_cast<size_t>(info.SizeInBytes);
+  return HSA_STATUS_SUCCESS;
+#else
+  return static_cast<hsa_status_t>(HSA_STATUS_ERROR_NOT_SUPPORTED);
+#endif
+}
+
+hsa_status_t Runtime::DmaBufImportRelease(void* ptr) {
+  if (!ptr) return HSA_STATUS_ERROR_INVALID_ARGUMENT;
+  std::lock_guard<std::shared_mutex> lock(memory_lock_);
+  auto it = allocation_map_.find(ptr);
+  if (it == allocation_map_.end() || !it->second.dmabuf_import)
+    return HSA_STATUS_ERROR_INVALID_ALLOCATION;
+  if (it->second.thunk_bo)
+    HSAKMT_CALL(hsaKmtMemHandleFree(it->second.thunk_bo));
+  allocation_map_.erase(it);
+  return HSA_STATUS_SUCCESS;
+}
+
 hsa_status_t Runtime::VMemoryAddressReserve(void** va, size_t size, uint64_t address,
                                             uint64_t alignment, uint64_t flags) {
   void* addr = (void*)address;

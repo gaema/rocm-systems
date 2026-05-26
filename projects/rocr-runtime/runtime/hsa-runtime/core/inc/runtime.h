@@ -395,6 +395,9 @@ class Runtime {
 
   hsa_status_t DmaBufClose(int dmabuf);
 
+  hsa_status_t DmaBufImport(int dmabuf, void** ptr, size_t* size);
+  hsa_status_t DmaBufImportRelease(void* ptr);
+
   hsa_status_t VMemoryAddressReserve(void** ptr, size_t size, uint64_t address, uint64_t alignment, uint64_t flags);
 
   hsa_status_t VMemoryAddressFree(void* ptr, size_t size);
@@ -571,7 +574,8 @@ class Runtime {
           size_requested(0),
           alloc_flags(core::MemoryRegion::AllocateNoFlags),
           user_ptr(nullptr),
-          thunk_bo(nullptr) {}
+          thunk_bo(nullptr),
+          dmabuf_import(false) {}
     AllocationRegion(const MemoryRegion* region_arg, size_t size_arg, size_t size_requested,
                      MemoryRegion::AllocateFlags alloc_flags)
         : region(region_arg),
@@ -579,7 +583,8 @@ class Runtime {
           size_requested(size_requested),
           alloc_flags(alloc_flags),
           user_ptr(nullptr),
-          thunk_bo(nullptr) {}
+          thunk_bo(nullptr),
+          dmabuf_import(false) {}
 
     struct notifier_t {
       void* ptr;
@@ -594,6 +599,7 @@ class Runtime {
     void* user_ptr;
     std::unique_ptr<std::vector<notifier_t>> notifiers;
     HsaMemoryObjectHandle thunk_bo;
+    bool dmabuf_import;    /* true if created via DmaBufImport */
   };
 
   struct AsyncEventsInfo;

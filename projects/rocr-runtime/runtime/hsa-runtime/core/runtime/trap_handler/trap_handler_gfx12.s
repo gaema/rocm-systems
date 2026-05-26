@@ -1518,9 +1518,8 @@
   s_lshr_b32        ttmp12, ttmp12, (SQ_WAVE_STATE_PRIV_BARRIER_COMPLETE_SHIFT + 1)
   s_setreg_b32      hwreg(HW_REG_STATE_PRIV, SQ_WAVE_STATE_PRIV_BARRIER_COMPLETE_SHIFT + 1, 32 - SQ_WAVE_STATE_PRIV_BARRIER_COMPLETE_SHIFT - 1), ttmp12
 
-.if .amdgcn.gfx_generation_minor == 0
-  s_setreg_b32      hwreg(HW_REG_WAVE_SCHED_MODE, 0, 2), ttmp2
-.endif
+// HW_REG_WAVE_SCHED_MODE (gfx1200-only, minor==0) added after ROCm 7.2.3 LLVM.
+// Guard with .altmacro / .noaltmacro trick not available in asm; skip for now.
 
   // Return to original (possibly modified) PC.
   s_rfe_b64         [ttmp0, ttmp1]

@@ -1594,6 +1594,24 @@ hsa_status_t hsa_amd_portable_close_dmabuf(int dmabuf) {
   CATCH;
 }
 
+hsa_status_t hsa_amd_portable_import_dmabuf(int dmabuf, void** ptr, size_t* size) {
+  TRY;
+  IS_OPEN();
+  if (dmabuf < 0) return HSA_STATUS_ERROR_INVALID_ARGUMENT;
+  IS_BAD_PTR(ptr);
+  IS_BAD_PTR(size);
+  return core::Runtime::runtime_singleton_->DmaBufImport(dmabuf, ptr, size);
+  CATCH;
+}
+
+hsa_status_t hsa_amd_portable_release_dmabuf_import(void* ptr) {
+  TRY;
+  IS_OPEN();
+  IS_BAD_PTR(ptr);
+  return core::Runtime::runtime_singleton_->DmaBufImportRelease(ptr);
+  CATCH;
+}
+
 hsa_status_t hsa_amd_vmem_address_reserve(void** va, size_t size, uint64_t address,
                                           uint64_t flags) {
   TRY;

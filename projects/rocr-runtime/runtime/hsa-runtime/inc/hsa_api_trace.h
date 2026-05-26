@@ -251,6 +251,8 @@ struct AmdExtTable {
   decltype(hsa_amd_queue_cu_get_mask)* hsa_amd_queue_cu_get_mask_fn;
   decltype(hsa_amd_portable_export_dmabuf)* hsa_amd_portable_export_dmabuf_fn;
   decltype(hsa_amd_portable_close_dmabuf)* hsa_amd_portable_close_dmabuf_fn;
+  decltype(hsa_amd_portable_import_dmabuf)* hsa_amd_portable_import_dmabuf_fn;
+  decltype(hsa_amd_portable_release_dmabuf_import)* hsa_amd_portable_release_dmabuf_import_fn;
   decltype(hsa_amd_vmem_address_reserve)* hsa_amd_vmem_address_reserve_fn;
   decltype(hsa_amd_vmem_address_free)* hsa_amd_vmem_address_free_fn;
   decltype(hsa_amd_vmem_handle_create)* hsa_amd_vmem_handle_create_fn;

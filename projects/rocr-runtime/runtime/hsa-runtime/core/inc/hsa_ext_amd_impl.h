@@ -322,6 +322,9 @@ hsa_status_t HSA_API hsa_amd_portable_export_dmabuf(const void* ptr, size_t size
 // Mirrors Amd Extension Apis
 hsa_status_t HSA_API hsa_amd_portable_close_dmabuf(int dmabuf);
 
+hsa_status_t hsa_amd_portable_import_dmabuf(int dmabuf, void** ptr, size_t* size);
+hsa_status_t hsa_amd_portable_release_dmabuf_import(void* ptr);
+
 // Mirrors Amd Extension Apis
 hsa_status_t hsa_amd_vmem_address_reserve(void** ptr, size_t size, uint64_t address,
                                           uint64_t flags);

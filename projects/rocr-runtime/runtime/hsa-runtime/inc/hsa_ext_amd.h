@@ -75,9 +75,10 @@
  * - 1.21 - hsa_amd_signal_get_event_id
  * - 1.22 - hsa_amd_queue_get_info: per-queue VM fault state queries
  * - 1.23 - hsa_amd_agent_info_t: HSA_AMD_AGENT_INFO_MAX_DATA_PREFETCH_REGIONS
+ * - 1.24 - hsa_amd_portable_import_dmabuf, hsa_amd_portable_release_dmabuf_import
  */
 #define HSA_AMD_INTERFACE_VERSION_MAJOR 1
-#define HSA_AMD_INTERFACE_VERSION_MINOR 23
+#define HSA_AMD_INTERFACE_VERSION_MINOR 24
 
 #ifdef __cplusplus
 extern "C" {
@@ -3938,6 +3939,40 @@ hsa_status_t hsa_amd_portable_export_dmabuf_v2(const void* ptr, size_t size,
  * async IO error may have occured.
  */
 hsa_status_t hsa_amd_portable_close_dmabuf(int dmabuf);
+
+/**
+ * @brief Imports an OS-specific, vendor-neutral dma-buf handle into AMD GPU
+ * address space.
+ *
+ * Accepts a Linux dma-buf file descriptor from any source (AMD, Intel xe,
+ * NVIDIA, or any DRM driver) and returns a device pointer accessible by
+ * AMD GPU DMA engines. Enables cross-vendor peer DMA without host staging.
+ *
+ * The returned pointer is valid until hsa_amd_portable_release_dmabuf_import
+ * is called. The caller retains ownership of the FD; close it independently.
+ *
+ * @param[in]  dmabuf  Linux dma-buf file descriptor to import.
+ * @param[out] ptr     Device-accessible pointer to the imported buffer.
+ * @param[out] size    Size in bytes of the imported buffer.
+ *
+ * @retval HSA_STATUS_SUCCESS            Import succeeded.
+ * @retval HSA_STATUS_ERROR_INVALID_ALLOCATION  FD is not a valid dma-buf.
+ * @retval HSA_STATUS_ERROR_OUT_OF_RESOURCES    Insufficient GPU address space.
+ * @retval HSA_STATUS_ERROR_NOT_INITIALIZED     Runtime not initialized.
+ */
+hsa_status_t hsa_amd_portable_import_dmabuf(int dmabuf, void** ptr, size_t* size);
+
+/**
+ * @brief Releases a buffer previously imported via hsa_amd_portable_import_dmabuf.
+ *
+ * Unmaps the GPU address range and frees the associated KFD allocation object.
+ *
+ * @param[in] ptr  Pointer previously returned by hsa_amd_portable_import_dmabuf.
+ *
+ * @retval HSA_STATUS_SUCCESS
+ * @retval HSA_STATUS_ERROR_INVALID_ALLOCATION  ptr not a known import.
+ */
+hsa_status_t hsa_amd_portable_release_dmabuf_import(void* ptr);
 
 typedef enum hsa_amd_vmem_address_reserve_flag_s {
   // Only reserve a VA range without registering it to the underlying driver

@@ -1268,6 +1268,14 @@ hsa_status_t HSA_API hsa_amd_portable_close_dmabuf(int dmabuf) {
   return amdExtTable->hsa_amd_portable_close_dmabuf_fn(dmabuf);
 }
 
+hsa_status_t HSA_API hsa_amd_portable_import_dmabuf(int dmabuf, void** ptr, size_t* size) {
+  return amdExtTable->hsa_amd_portable_import_dmabuf_fn(dmabuf, ptr, size);
+}
+
+hsa_status_t HSA_API hsa_amd_portable_release_dmabuf_import(void* ptr) {
+  return amdExtTable->hsa_amd_portable_release_dmabuf_import_fn(ptr);
+}
+
 hsa_status_t HSA_API hsa_amd_vmem_address_reserve(void** ptr, size_t size, uint64_t address,
                                                   uint64_t flags) {
   return amdExtTable->hsa_amd_vmem_address_reserve_fn(ptr, size, address, flags);
